@@ -10,12 +10,12 @@ def fromcsv(filename):
             lines.append(row)
     return lines
 
-midsList = fromcsv('mids.csv')  
+midsList = fromcsv('uniqueMids.csv')
 
 with open('sfIdsWithMidHash.csv', 'wb') as csvfile:
     writer = csv.writer(csvfile)
-    for i in range(1, len(midsList)):
-        hash = hashlib.sha512(midsList[i][1]).hexdigest()        
+    for i in range(0, len(midsList)):
+        hash = hashlib.sha512(midsList[i][1]).hexdigest()
         writer.writerow([midsList[i][0],hash])
 
 

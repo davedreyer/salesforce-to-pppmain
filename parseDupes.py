@@ -1,3 +1,4 @@
+import hashlib
 import csv
 import re
 def fromcsv(filename):
@@ -8,7 +9,7 @@ def fromcsv(filename):
             lines.append(row)
     return lines
 
-fieldTypes = {'midHash', 'midZip', 'mid', 'dba'}
+fieldTypes = {'midHash', 'midZip', 'mid', 'dbaOrStreet'}
 
 def testForValidData(string, fieldType):
     if not (fieldType in fieldTypes):
@@ -31,7 +32,7 @@ def testForValidData(string, fieldType):
         if not (re.match('^[0-9]+$', string) and len(string) >= 10):
             return False
         return True
-    elif (fieldType == 'dba'):
+    elif (fieldType == 'dbaOrStreet'):
         if (len(string) <= 3):
             return False
         return True
@@ -41,6 +42,7 @@ locationsList = fromcsv('LocationTable.csv')
 midsList = fromcsv('mids_extract_031418.csv')
 
 print("No. of location records: ", len(locationsList)-1)
+print("No. of sf mid records: ", len(midsList)-1)
 
 locsByMidHash = {}
 locsByMidHashDupeMap = {}
@@ -51,6 +53,9 @@ locsByDbaDupeMap = {}
 locsByMidZip = {}
 locsByMidZipDupeMap = {}
 
+locsByStreet = {}
+locsByStreetDupeMap = {}
+
 for i in range(1, len(locationsList)):
     if (testForValidData(locationsList[i][19], 'midHash')):
         if (locationsList[i][19] in locsByMidHash):
@@ -58,7 +63,7 @@ for i in range(1, len(locationsList)):
         else:
             locsByMidHash[locationsList[i][19]] = True
 
-    if (testForValidData(locationsList[i][2], 'dba')):
+    if (testForValidData(locationsList[i][2], 'dbaOrStreet')):
         if (locationsList[i][2] in locsByDba):
             locsByDbaDupeMap[locationsList[i][2]] = True
         else:
@@ -70,6 +75,12 @@ for i in range(1, len(locationsList)):
         else:
             locsByMidZip[locationsList[i][16] + locationsList[i][17]] = True
 
+    if (testForValidData(locationsList[i][12], 'dbaOrStreet')):
+        if (locationsList[i][12].lower() in locsByStreet):
+            locsByStreetDupeMap[locationsList[i][12].lower()] = True
+        else:
+            locsByStreet[locationsList[i][12].lower()] = True
+
 print("No. of unique mid hash values for locations: ", len(locsByMidHash.keys()))
 print("No. of mid hash values that are duplicated: ", len(locsByMidHashDupeMap.keys()))
 
@@ -79,6 +90,9 @@ print("No. of mid dba names that are duplicated: ", len(locsByDbaDupeMap.keys())
 print("No. of unique mid + zip concat combos for locations: ", len(locsByMidZip.keys()))
 print("No. of mid + zip concat combos that are duplicated: ", len(locsByMidZipDupeMap.keys()))
 
+print("No. of unique street addresses for locations: ", len(locsByStreet.keys()))
+print("No. of street addresses that are duplicated: ", len(locsByStreetDupeMap.keys()))
+
 locsUnique = []
 locsDupe = []
 
@@ -87,26 +101,52 @@ for i in range(1, len(locationsList)):
         locsDupe.append(locationsList[i])
     elif (locationsList[i][2] in locsByDbaDupeMap):
         locsDupe.append(locationsList[i])
-    elif (locationsList[i][16] + locationsList[i][17] in locsByMidZipDupeMap):
-        locsDupe.append(locationsList[i])
+    elif ((testForValidData(locationsList[i][16], 'midZip') and testForValidData(locationsList[i][17], 'midZip'))
+        and (locationsList[i][16] + locationsList[i][17] in locsByMidZipDupeMap)):
+            locsDupe.append(locationsList[i])
+        # if (locationsList[i][16] + locationsList[i][17] in locsByMidZipDupeMap):
+        #     locsDupe.append(locationsList[i])
+        # else:
+        #     locsUnique.append(locationsList[i])
+    elif (testForValidData(locationsList[i][12], 'dbaOrStreet')
+        and (locationsList[i][12].lower() in locsByStreetDupeMap)):
+            locsDupe.append(locationsList[i])
+        # if (locationsList[i][12].lower() in locsByStreetDupeMap):
+        #     locsDupe.append(locationsList[i])
+        # else:
+        #     locsUnique.append(locationsList[i])
     else:
         locsUnique.append(locationsList[i])
+
+locsHeaders = ["LocationKey","LocationId","LocationName","MerchantId","CompanyId",
+"LocationContact","CreatedOn","UpdatedOn","Active","Deleted","CRMID","ForceQuarantineTypeId",
+"Address1","Address2","City","State","Zip","MerchantIdLast","ClosingTime","MerchantIdSHA512",
+"ResultCallbackUrl","ResultCallbackUrlTurnOnDate","BatchStartTime","BatchEndTime","BatchRetryInterval",
+"CloseBatchActive"]
 
 locsDupeFile = open("dupLocs.csv", "w")
 locsUniqueFile = open("uniqueLocs.csv", "w")
 
-for i in range(0, len(locsDupe) - 1):
+locsHeaderRow = locsHeaders[0]
+for i in range(1, len(locsHeaders)):
+    locsHeaderRow += "," + locsHeaders[i]
+locsHeaderRow += "\n"
+
+locsUniqueFile.write(locsHeaderRow)
+locsDupeFile.write(locsHeaderRow)
+
+for i in range(0, len(locsDupe)):
     row = ""
-    for j in range(0, len(locsDupe[i]) - 1):
+    for j in range(0, len(locsDupe[i])):
         row += "\"" + locsDupe[i][j] + "\","
     row += "\n"
     locsDupeFile.write(row)
 
 locsDupeFile.close()
 
-for i in range(0, len(locsUnique) - 1):
+for i in range(0, len(locsUnique)):
     row = ""
-    for j in range(0, len(locsUnique[i]) - 1):
+    for j in range(0, len(locsUnique[i])):
         row += "\"" + locsUnique[i][j] + "\","
     row += "\n"
     locsUniqueFile.write(row)
@@ -122,6 +162,9 @@ midsByDbaDupeMap = {}
 midsByMidZip = {}
 midsByMidZipDupeMap = {}
 
+midsByStreet = {}
+midsByStreetDupeMap = {}
+
 for i in range(1, len(midsList)):
     if (testForValidData(midsList[i][1], 'mid')):
         if (midsList[i][1] in midsByMid):
@@ -129,7 +172,7 @@ for i in range(1, len(midsList)):
         else:
             midsByMid[midsList[i][1]] = True
 
-    if (testForValidData(midsList[i][11], 'dba')):
+    if (testForValidData(midsList[i][11], 'dbaOrStreet')):
         if (midsList[i][11] in midsByDba):
             midsByDbaDupeMap[midsList[i][11]] = True
         else:
@@ -141,6 +184,12 @@ for i in range(1, len(midsList)):
         else:
             midsByMidZip[midsList[i][15] + midsList[i][1][-4:]] = True
 
+    if (testForValidData(midsList[i][13], 'dbaOrStreet')):
+        if (midsList[i][13].lower() in midsByStreet):
+            midsByStreetDupeMap[midsList[i][13].lower()] = True
+        else:
+            midsByStreet[midsList[i][13].lower()] = True
+
 print("No. of unique mid values for mids: ", len(midsByMid.keys()))
 print("No. of mid values that are duplicated for mids: ", len(midsByMidDupeMap.keys()))
 
@@ -150,6 +199,9 @@ print("No. of mid dba names that are duplicated for mids: ", len(midsByDbaDupeMa
 print("No. of unique mid + zip concat combos for mids: ", len(midsByMidZip.keys()))
 print("No. of mid + zip concat combos that are duplicated for mids: ", len(midsByMidZipDupeMap.keys()))
 
+print("No. of unique street addresses for mids: ", len(midsByStreet.keys()))
+print("No. of street addresses that are duplicated for mids: ", len(midsByStreetDupeMap.keys()))
+
 midsUnique = []
 midsDupe = []
 
@@ -158,87 +210,58 @@ for i in range(1, len(midsList)):
         midsDupe.append(midsList[i])
     elif (midsList[i][11] in midsByDbaDupeMap):
         midsDupe.append(midsList[i])
-    elif (midsList[i][15] + midsList[i][1][-4:] in midsByMidZipDupeMap):
-        midsDupe.append(midsList[i])
+    elif ((testForValidData(midsList[i][15], 'midZip') and testForValidData(midsList[i][1], 'mid'))
+        and (midsList[i][15] + midsList[i][1][-4:] in midsByMidZipDupeMap)):
+            midsDupe.append(midsList[i])
+        # if (midsList[i][15] + midsList[i][1][-4:] in midsByMidZipDupeMap):
+        #     midsDupe.append(midsList[i])
+        # else:
+        #     midsUnique.append(midsList[i])
+    elif (testForValidData(midsList[i][13], 'dbaOrStreet')
+        and (midsList[i][13].lower() in midsByStreetDupeMap)):
+            midsDupe.append(midsList[i])
+        # if (midsList[i][13].lower() in midsByStreetDupeMap):
+        #     midsDupe.append(midsList[i])
+        # else:
+        #     midsUnique.append(midsList[i])
     else:
         midsUnique.append(midsList[i])
+
+print("Final number of unique sf mid records: ", len(midsUnique) - 1)
+print("Final number of duplicated sf mid records: ", len(midsDupe) - 1)
 
 midsDupeFile = open("dupMids.csv", "w")
 midsUniqueFile = open("uniqueMids.csv", "w")
 
-for i in range(0, len(midsDupe) - 1):
+midsHeaders = ["ID","NAME","CREATEDDATE","DYNAMICS_GUID__C",
+"OPPORTUNITY__R.DATE_TIME_CHANGED_TO_TO_BE_INSTALLED__C","ACCOUNT__C",
+"ACCOUNT_REP__C","ACCOUNT_TYPE__C","CORPORATE_CONTACT__C","DBA_CITY__C",
+"DBA_E_MAIL_ADDRESS__C","DBA_NAME__C","DBA_STATE__C","DBA_STREET_ADDRESS_1__C",
+"DBA_STREET_ADDRESS_2__C","DBA_ZIP_POSTAL_CODE__C","LOCATION_PHONE_NUMBER__C","REFERRAL_ACCOUNT__C"]
+
+midsHeaderRow = midsHeaders[0]
+for i in range(1, len(midsHeaders)):
+    midsHeaderRow += "," + midsHeaders[i]
+midsHeaderRow += "\n"
+
+midsUniqueFile.write(midsHeaderRow)
+midsDupeFile.write(midsHeaderRow)
+
+for i in range(0, len(midsDupe)):
     row = ""
-    for j in range(0, len(midsDupe[i]) - 1):
+    for j in range(0, len(midsDupe[i])):
         row += "\"" + midsDupe[i][j] + "\","
     row += "\n"
     midsDupeFile.write(row)
 
 midsDupeFile.close()
 
-for i in range(0, len(midsUnique) - 1):
+for i in range(0, len(midsUnique)):
     row = ""
-    for j in range(0, len(midsUnique[i]) - 1):
+    for j in range(0, len(midsUnique[i])):
         row += "\"" + midsUnique[i][j] + "\","
+    row += "\"" + hashlib.sha512(midsUnique[i][1]).hexdigest() + "\""
     row += "\n"
     midsUniqueFile.write(row)
 
 midsUniqueFile.close()
-
-
-# def testForEmptyMidHash(string):
-#     if (string is None):
-#         return False
-#     if not (re.match('^[a-z0-9]+$', string)):
-#         return False
-#     if (string == 'NULL'):
-#         return False
-#     return True
-
-# def testForEmptyMidZip(string):
-#     if (string is None):
-#         return False
-#     if not (re.match('^[a-zA-Z0-9\-]+$', string)):
-#         return False
-#     if (string == 'NULL'):
-#         return False
-#     return True
-
-# def testForEmptyMid(string):
-#     if (string is None):
-#         return False
-#     if not (re.match('[0-9]+$', string)):
-#         return False
-#     return True
-
-# def testForEmptyDba(string):
-#     if (string is None):
-#         return False
-#     if (string == ""):
-#         return False
-#     if (string == 'NULL'):
-#         return False
-#     return True
-
-# locsByDba = {}
-# locsByDbaDupeMap = {}
-
-# for i in range(1, len(locationsList)):
-#     if (testForEmptyDba(locationsList[i][2])):
-#         if (locationsList[i][2] in locsByDba):
-#             locsByDbaDupeMap[locationsList[i][2]] = True
-#             continue
-#         locsByDba[locationsList[i][2]] = { 'lid': locationsList[i][1] }
-# print("No. of unique mid dba names for locations: ", len(locsByDba.keys()))
-# print("No. of mid dba names that are duplicated: ", len(locsByDbaDupeMap.keys()))
-
-# locsByMidZip = {}
-# locsByMidZipDupeMap = {}
-
-# for i in range(1, len(locationsList)):
-#     if (testForEmptyMidZip(locationsList[i][16]) and testForEmpty(locationsList[i][17])):
-#         if (locationsList[i][16] + locationsList[i][17] in locsByMidZip):
-#             locsByMidZipDupeMap[locationsList[i][16] + locationsList[i][17]] = True
-#             continue
-#         locsByMidZip[locationsList[i][16] + locationsList[i][17]] = { 'lid': locationsList[i][1] }
-# print("No. of unique mid + zip concat combos for locations: ", len(locsByMidZip.keys()))
-# print("No. of mid + zip concat combos that are duplicated: ", len(locsByMidZipDupeMap.keys()))
