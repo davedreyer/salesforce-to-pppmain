@@ -53,8 +53,8 @@ locsByDbaDupeMap = {}
 locsByMidZip = {}
 locsByMidZipDupeMap = {}
 
-locsByStreet = {}
-locsByStreetDupeMap = {}
+# locsByStreet = {}
+# locsByStreetDupeMap = {}
 
 for i in range(1, len(locationsList)):
     if (testForValidData(locationsList[i][19], 'midHash')):
