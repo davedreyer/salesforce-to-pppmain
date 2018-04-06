@@ -53,9 +53,6 @@ locsByDbaDupeMap = {}
 locsByMidZip = {}
 locsByMidZipDupeMap = {}
 
-# locsByStreet = {}
-# locsByStreetDupeMap = {}
-
 for i in range(1, len(locationsList)):
     if (testForValidData(locationsList[i][19], 'midHash')):
         if (locationsList[i][19] in locsByMidHash):
@@ -75,12 +72,6 @@ for i in range(1, len(locationsList)):
         else:
             locsByMidZip[locationsList[i][16] + locationsList[i][17]] = True
 
-    if (testForValidData(locationsList[i][12], 'dbaOrStreet')):
-        if (locationsList[i][12].lower() in locsByStreet):
-            locsByStreetDupeMap[locationsList[i][12].lower()] = True
-        else:
-            locsByStreet[locationsList[i][12].lower()] = True
-
 print("No. of unique mid hash values for locations: ", len(locsByMidHash.keys()))
 print("No. of mid hash values that are duplicated: ", len(locsByMidHashDupeMap.keys()))
 
@@ -89,9 +80,6 @@ print("No. of mid dba names that are duplicated: ", len(locsByDbaDupeMap.keys())
 
 print("No. of unique mid + zip concat combos for locations: ", len(locsByMidZip.keys()))
 print("No. of mid + zip concat combos that are duplicated: ", len(locsByMidZipDupeMap.keys()))
-
-print("No. of unique street addresses for locations: ", len(locsByStreet.keys()))
-print("No. of street addresses that are duplicated: ", len(locsByStreetDupeMap.keys()))
 
 locsUnique = []
 locsDupe = []
@@ -104,17 +92,6 @@ for i in range(1, len(locationsList)):
     elif ((testForValidData(locationsList[i][16], 'midZip') and testForValidData(locationsList[i][17], 'midZip'))
         and (locationsList[i][16] + locationsList[i][17] in locsByMidZipDupeMap)):
             locsDupe.append(locationsList[i])
-        # if (locationsList[i][16] + locationsList[i][17] in locsByMidZipDupeMap):
-        #     locsDupe.append(locationsList[i])
-        # else:
-        #     locsUnique.append(locationsList[i])
-    elif (testForValidData(locationsList[i][12], 'dbaOrStreet')
-        and (locationsList[i][12].lower() in locsByStreetDupeMap)):
-            locsDupe.append(locationsList[i])
-        # if (locationsList[i][12].lower() in locsByStreetDupeMap):
-        #     locsDupe.append(locationsList[i])
-        # else:
-        #     locsUnique.append(locationsList[i])
     else:
         locsUnique.append(locationsList[i])
 
@@ -137,18 +114,18 @@ locsDupeFile.write(locsHeaderRow)
 
 for i in range(0, len(locsDupe)):
     row = ""
-    for j in range(0, len(locsDupe[i])):
+    for j in range(0, len(locsDupe[i]) - 1):
         row += "\"" + locsDupe[i][j] + "\","
-    row += "\n"
+    row += "\"" + locsDupe[i][len(locsDupe[i]) - 1] + "\"\n"
     locsDupeFile.write(row)
 
 locsDupeFile.close()
 
 for i in range(0, len(locsUnique)):
     row = ""
-    for j in range(0, len(locsUnique[i])):
+    for j in range(0, len(locsUnique[i]) - 1):
         row += "\"" + locsUnique[i][j] + "\","
-    row += "\n"
+    row += "\"" + locsUnique[i][len(locsUnique[i]) - 1] + "\"\n"
     locsUniqueFile.write(row)
 
 locsUniqueFile.close()
@@ -161,9 +138,6 @@ midsByDbaDupeMap = {}
 
 midsByMidZip = {}
 midsByMidZipDupeMap = {}
-
-midsByStreet = {}
-midsByStreetDupeMap = {}
 
 for i in range(1, len(midsList)):
     if (testForValidData(midsList[i][1], 'mid')):
@@ -184,12 +158,6 @@ for i in range(1, len(midsList)):
         else:
             midsByMidZip[midsList[i][15] + midsList[i][1][-4:]] = True
 
-    if (testForValidData(midsList[i][13], 'dbaOrStreet')):
-        if (midsList[i][13].lower() in midsByStreet):
-            midsByStreetDupeMap[midsList[i][13].lower()] = True
-        else:
-            midsByStreet[midsList[i][13].lower()] = True
-
 print("No. of unique mid values for mids: ", len(midsByMid.keys()))
 print("No. of mid values that are duplicated for mids: ", len(midsByMidDupeMap.keys()))
 
@@ -198,9 +166,6 @@ print("No. of mid dba names that are duplicated for mids: ", len(midsByDbaDupeMa
 
 print("No. of unique mid + zip concat combos for mids: ", len(midsByMidZip.keys()))
 print("No. of mid + zip concat combos that are duplicated for mids: ", len(midsByMidZipDupeMap.keys()))
-
-print("No. of unique street addresses for mids: ", len(midsByStreet.keys()))
-print("No. of street addresses that are duplicated for mids: ", len(midsByStreetDupeMap.keys()))
 
 midsUnique = []
 midsDupe = []
@@ -213,17 +178,6 @@ for i in range(1, len(midsList)):
     elif ((testForValidData(midsList[i][15], 'midZip') and testForValidData(midsList[i][1], 'mid'))
         and (midsList[i][15] + midsList[i][1][-4:] in midsByMidZipDupeMap)):
             midsDupe.append(midsList[i])
-        # if (midsList[i][15] + midsList[i][1][-4:] in midsByMidZipDupeMap):
-        #     midsDupe.append(midsList[i])
-        # else:
-        #     midsUnique.append(midsList[i])
-    elif (testForValidData(midsList[i][13], 'dbaOrStreet')
-        and (midsList[i][13].lower() in midsByStreetDupeMap)):
-            midsDupe.append(midsList[i])
-        # if (midsList[i][13].lower() in midsByStreetDupeMap):
-        #     midsDupe.append(midsList[i])
-        # else:
-        #     midsUnique.append(midsList[i])
     else:
         midsUnique.append(midsList[i])
 
@@ -237,7 +191,7 @@ midsHeaders = ["ID","NAME","CREATEDDATE","DYNAMICS_GUID__C",
 "OPPORTUNITY__R.DATE_TIME_CHANGED_TO_TO_BE_INSTALLED__C","ACCOUNT__C",
 "ACCOUNT_REP__C","ACCOUNT_TYPE__C","CORPORATE_CONTACT__C","DBA_CITY__C",
 "DBA_E_MAIL_ADDRESS__C","DBA_NAME__C","DBA_STATE__C","DBA_STREET_ADDRESS_1__C",
-"DBA_STREET_ADDRESS_2__C","DBA_ZIP_POSTAL_CODE__C","LOCATION_PHONE_NUMBER__C","REFERRAL_ACCOUNT__C"]
+"DBA_STREET_ADDRESS_2__C","DBA_ZIP_POSTAL_CODE__C","LOCATION_PHONE_NUMBER__C","REFERRAL_ACCOUNT__C","MID_HASH"]
 
 midsHeaderRow = midsHeaders[0]
 for i in range(1, len(midsHeaders)):
@@ -249,9 +203,9 @@ midsDupeFile.write(midsHeaderRow)
 
 for i in range(0, len(midsDupe)):
     row = ""
-    for j in range(0, len(midsDupe[i])):
+    for j in range(0, len(midsDupe[i]) - 1):
         row += "\"" + midsDupe[i][j] + "\","
-    row += "\n"
+    row += "\"" + hashlib.sha512(midsDupe[i][1]).hexdigest() + "\"\n"
     midsDupeFile.write(row)
 
 midsDupeFile.close()
@@ -260,8 +214,7 @@ for i in range(0, len(midsUnique)):
     row = ""
     for j in range(0, len(midsUnique[i])):
         row += "\"" + midsUnique[i][j] + "\","
-    row += "\"" + hashlib.sha512(midsUnique[i][1]).hexdigest() + "\""
-    row += "\n"
+    row += "\"" + hashlib.sha512(midsUnique[i][1]).hexdigest() + "\"\n"
     midsUniqueFile.write(row)
 
 midsUniqueFile.close()

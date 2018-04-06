@@ -47,8 +47,6 @@ midsList = fromcsv('uniqueMids.csv')
 print("No. of mid records: ", len(midsList)-1)
 print("No. of location records: ", len(locationsList)-1)
 
-# set up mid and locs objects by sfid and lid respectively
-
 mids = {}
 midsByMid = {}
 duplicateMids = 0
@@ -64,13 +62,6 @@ for i in range(1, len(midsList)):
 
 print("No. of duplicate mids: ", duplicateMids)
 
-# print("No. of mid objects: ", len(mids.keys()))
-
-# locs = {}
-# for i in range(1, len(locationsList)):
-#     locs[locationsList[i][1]] = { 'lid': locationsList[i][1] }
-# print("No. of location objects: ", len(locs.keys()))
-
 # convert locs list to dicts with searchable keys
 
 locsByCrmIdDup = 0
@@ -84,9 +75,6 @@ locsByMidZipDupe = 0
 
 locsByMidHash = {}
 locsByMidHashDupe = 0
-
-locsByStreet = {}
-locsByStreetHashDupe = 0
 
 for i in range(1, len(locationsList)):
     if (testForValidData(locationsList[i][10], 'crmid')):
@@ -117,13 +105,6 @@ for i in range(1, len(locationsList)):
         else:
             locsByMidHash[locationsList[i][19]] = { 'lid': locationsList[i][1] }
 
-    if (testForValidData(locationsList[i][12], 'dbaOrStreet')):
-        if (locationsList[i][12].lower() in locsByStreet):
-            locsByStreetHashDupe += 1
-            print(locationsList[i][12])
-        else:
-            locsByStreet[locationsList[i][12].lower()] = { 'lid': locationsList[i][1] }
-
 print("No. of locations with unique crmid: ", len(locsByCrmId.keys()))
 print("No. of locations with duplicate crmid: ", locsByCrmIdDup)
 
@@ -136,21 +117,16 @@ print("No. of locations with duplicate concat last 4 of mid and zip: ", locsByMi
 print("No. of locations with unique mid hash: ", len(locsByMidHash.keys()))
 print("No. of locations with duplicate mid hash values: ", locsByMidHashDupe)
 
-# print("No. of locations with unique street address: ", len(locsByStreet.keys()))
-# print("No. of locations with duplicate street addresses: ", locsByStreetHashDupe)
-
 # find matches
 
 matchCountByCrmId = 0
 matchCountByDbaName = 0
 zipLast4MidMatchCount = 0
 matchCountMidHash = 0
-matchCountStreet = 0
 
 mismatchedMids = {}
 
 for k in mids:
-    # todo
     if (mids[k]['crmid'] in locsByCrmId):
         mids[k]['lid'] = locsByCrmId[mids[k]['crmid']]['lid']
         mids[k]['lidMatchList'] = [{'crmid': locsByCrmId[mids[k]['crmid']]['lid']}]
@@ -160,9 +136,6 @@ for k in mids:
         if ('lid' in mids[k]):
             if (mids[k]['lid'] != locsByDbaName[mids[k]['name']]['lid']):
                 mismatchedMids[mids[k]['id']] = True
-                # print("Lid not matching for sfid " + mids[k]['id'] +
-                # ", currently with lid: " + mids[k]['lid'] + " and match for new lid on dba name "
-                # + locsByDbaName[mids[k]['name']]['lid'])
             mids[k]['lidMatchList'].append({'dbaName': locsByDbaName[mids[k]['name']]['lid']})
         else:
             mids[k]['lid'] = locsByDbaName[mids[k]['name']]['lid']
@@ -175,10 +148,6 @@ for k in mids:
             if (mids[k]['lid'] != locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid']):
                 mismatchedMids[mids[k]['id']] = True
             mids[k]['lidMatchList'].append({'midZip': locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid']})
-                # print("Lid not matching for sfid " + mids[k]['id'] +
-                # ", currently with lid: " + mids[k]['lid'] + " and match for new lid on mid + zip "
-                # + locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid'])
-                # print("Lid not matching for sfid " + mids[k]['id'] + " and lid " + locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid'])
         else:
             mids[k]['lid'] = locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid']
             mids[k]['lidMatchList'] = [{'midZip': locsByMidZip[mids[k]['zip'] + mids[k]['mid'][-4:]]['lid']}]
@@ -190,42 +159,24 @@ for k in mids:
             if (mids[k]['lid'] != locsByMidHash[mids[k]['hash']]['lid']):
                 mismatchedMids[mids[k]['id']] = True
             mids[k]['lidMatchList'].append({'hash': locsByMidHash[mids[k]['hash']]['lid']})
-                # print("Lid not matching for sfid " + mids[k]['id'] +
-                # ", currently with lid: " + mids[k]['lid'] + " and match for new lid on mid hash "
-                # + locsByMidHash[mids[k]['hash']]['lid'])
-                # print("Lid not matching for sfid " + mids[k]['id'] + " and lid " + locsByMidHash[mids[k]['hash']]['lid'])
         else:
             mids[k]['lid'] = locsByMidHash[mids[k]['hash']]['lid']
             mids[k]['lidMatchList'] = [{'hash': locsByMidHash[mids[k]['hash']]['lid']}]
 
         matchCountMidHash += 1
 
-    if (mids[k]['street'].lower() in locsByStreet):
-        if ('lid' in mids[k]):
-            if (mids[k]['lid'] != locsByStreet[mids[k]['street'].lower()]['lid']):
-                mismatchedMids[mids[k]['id']] = True
-            mids[k]['lidMatchList'].append({'street': locsByStreet[mids[k]['street'].lower()]['lid']})
-                # print("Lid not matching for sfid " + mids[k]['id'] + " and lid " + locsByStreet[mids[k]['street'].lower()]['lid'])
-                # print("Lid not matching for sfid " + mids[k]['id'] +
-                # ", currently with lid: " + mids[k]['lid'] + " and match for new lid on street address "
-                # + locsByStreet[mids[k]['street'].lower()]['lid'])
-        else:
-            mids[k]['lid'] = locsByStreet[mids[k]['street'].lower()]['lid']
-            mids[k]['lidMatchList'] = [{'street': locsByStreet[mids[k]['street'].lower()]['lid']}]
-
-        matchCountStreet += 1
-
 print("No. of matches on Dynamics id: ", matchCountByCrmId)
 print("No. of matches on dba name: ", matchCountByDbaName)
 print("No. of matches on zip + last 4 of mid: ", zipLast4MidMatchCount)
 print("No. of matches on mid hash: ", matchCountMidHash)
-print("No. of matches on street address: ", matchCountStreet)
 print("No. of mismatched mids: ", len(mismatchedMids.keys()))
 
 
 totalMatchCount = 0
 midsWithLids = open("sfMidsMappedToLids.csv", "w")
 midsWithLids.write("sfId,mainDbLid,dbaName\n")
+
+locsWithSfId = {}
 
 for k in mids:
     if ('lid' in mids[k]):
@@ -234,10 +185,41 @@ for k in mids:
             mids[k]['lidMatchList'])
         else:
             totalMatchCount += 1
-            midsWithLids.write(mids[k]['id'] + "," + mids[k]['lid'] + "," + mids[k]['name'] + "\n")
+            locsWithSfId[mids[k]['lid']] = mids[k]['id']
+            midsWithLids.write("\"" + mids[k]['id'] + "\",\"" + mids[k]['lid'] + "\",\"" + mids[k]['name'] + "\"\n")
 
 midsWithLids.close()
 print("No. of total matches: ", totalMatchCount)
+
+locsHeaders = ["LocationKey","LocationId","LocationName","MerchantId","CompanyId",
+"LocationContact","CreatedOn","UpdatedOn","Active","Deleted","CRMID","ForceQuarantineTypeId",
+"Address1","Address2","City","State","Zip","MerchantIdLast","ClosingTime","MerchantIdSHA512",
+"ResultCallbackUrl","ResultCallbackUrlTurnOnDate","BatchStartTime","BatchEndTime","BatchRetryInterval",
+"CloseBatchActive","Sfid"]
+
+locsWithSfIds = open("locsWithSfIds.csv", "w")
+
+locsHeaderRow = locsHeaders[0]
+for i in range(1, len(locsHeaders)):
+    locsHeaderRow += "," + locsHeaders[i]
+locsHeaderRow += "\n"
+
+locsWithSfIds.write(locsHeaderRow)
+
+for i in range(1, len(locationsList)):
+    row = "\"" + locationsList[i][0] + "\""
+    for j in range(1, len(locationsList[i])):
+        row += ",\"" + locationsList[i][j] + "\""
+    if (locationsList[i][1] in locsWithSfId):
+        row += ",\"" + locsWithSfId[locationsList[i][1]] + "\"\n"
+    else:
+        row += ",\"\"\n"
+    locsWithSfIds.write(row)
+
+locsWithSfIds.close()
+
+
+
 
 
 

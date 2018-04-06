@@ -1,3 +1,7 @@
 *.csv
 *.csv#
 .DS_Store
+
+# vs code metadata
+
+.vscode
